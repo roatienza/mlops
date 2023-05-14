@@ -4,6 +4,10 @@ PyTriton SAM server
 Usage:
     python3 server.py
 
+Author:
+    Rowel Atienza
+    rowel@eee.upd.edu.ph
+
 '''
 
 
@@ -32,14 +36,19 @@ def infer_sam_masks(**image):
     logger.debug(f"Image data: {image.shape} ({image.size})") 
     masks = sam_masks_gen.generate(image)
     segmentation = []
+    area = []
     for i, mask in enumerate(masks):
         for k,v in mask.items():
             if k == "segmentation":
                 segmentation.append(v)
+            elif k == "area":
+                area.append(v)
 
     segmentation = np.array(segmentation).astype(np.bool_)
     segmentation = np.expand_dims(segmentation, axis=0)
-    return { "segmentation" : segmentation }
+    area = np.array(area).astype(np.intc)
+    area = np.expand_dims(area, axis=0)
+    return { "segmentation" : segmentation, "area" : area }
 
 
 # Connecting inference callback with Triton Inference Server
@@ -54,6 +63,7 @@ with Triton() as triton:
         ],
         outputs=[
             Tensor(name="segmentation", dtype=np.bool_, shape=(-1,-1,-1)),
+            Tensor(name="area", dtype=np.intc, shape=(-1,)),
         ],
         config=ModelConfig(max_batch_size=1)
     )

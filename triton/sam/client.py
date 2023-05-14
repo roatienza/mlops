@@ -22,7 +22,7 @@ logger = logging.getLogger("SAM Client")
 def infer_model(args):
     with ModelClient(args.url, "SAM", init_timeout_s=args.init_timeout_s) as client:
         if validators.url(args.image):
-            with urllib.request.urlopen(url) as url_response:
+            with urllib.request.urlopen(args.image) as url_response:
                 img_array = np.array(bytearray(url_response.read()), dtype=np.uint8)
                 image = cv2.imdecode(img_array, -1)
         else:
