@@ -9,4 +9,4 @@ The amount of engineering involved in deploying machine learning and AI models i
 
 ## Table of Contents
 
-1. [PyTriton/Triton](https://github.com/roatienza/mlops/tree/main/triton) -  for deploying AI inference server
+1. [PyTriton](https://github.com/roatienza/mlops/tree/main/triton) -  for deploying AI inference server using Flask like API
