@@ -2,7 +2,7 @@
 
 *Work in Progress*
 
-The amount of engineering involved in deploying machine learning and AI models is dauting. This repo serves dual purpose:
+The amount of engineering involved in deploying machine learning and AI models is daunting. This repo serves dual purpose:
 
 1. Documentation of selected tools 
 2. Sample code
