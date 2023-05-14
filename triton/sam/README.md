@@ -37,3 +37,7 @@ Open a new terminal, then run:
 ```
 python client.py
 ```
+
+### Client Notebook
+
+The client is also available as a [Jupyter Notebook](https://github.com/roatienza/mlops/blob/main/triton/sam/client.ipynb). Be sure to modify the `url` to point to your server ip. 
