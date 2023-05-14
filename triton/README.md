@@ -1,6 +1,6 @@
 # PyTriton
 
-[PyTriton](https://github.com/triton-inference-server/pytriton) enables fast deployment of AI/ML models and python tools in a [Flask](https://flask.palletsprojects.com/) API like manner. PyTriton can deploy model inference calls as commonly found in many github repo. Meanwhile, Triton requires specific model formats and configurations before it can be used.
+[PyTriton](https://github.com/triton-inference-server/pytriton) enables fast deployment of AI/ML models and python tools in a [Flask](https://flask.palletsprojects.com/) API like manner. PyTriton can deploy model inference calls as commonly found in many github repos. Meanwhile, Triton requires specific model formats and configurations before it can be used.
 
 PyTriton is like HuggingFace model hub except that we cna deploy models on our local machines therefore enabling faster inference time and higher flexibility in terms of configuration.
 
