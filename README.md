@@ -1,5 +1,7 @@
 # ML Operations
 
+*Work in Progress*
+
 The amount of engineering involved in deploying machine learning and AI models is dauting. This repo serves dual purpose:
 
 1. Documentation of selected tools 
