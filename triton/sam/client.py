@@ -20,7 +20,7 @@ from pytriton.client import ModelClient
 logger = logging.getLogger("SAM Client")
 
 def infer_model(args):
-    with ModelClient(args.url, "SAM", init_timeout_s=args.init_timeout_s) as client:
+    with ModelClient(args.url, args.model, init_timeout_s=args.init_timeout_s) as client:
         if validators.url(args.image):
             with urllib.request.urlopen(args.image) as url_response:
                 img_array = np.array(bytearray(url_response.read()), dtype=np.uint8)
@@ -41,6 +41,16 @@ def main():
         default="images/dog_car.jpg",
         help=(
             "Path to image can filesystem path or url path"
+        ),
+    )
+    choices = ["SAM_h", "SAM_l", "SAM_b"]
+    parser.add_argument(
+        "--model",
+        default=choices[0],
+        choices=choices,
+        help=(
+            "SAM model (huge, large, base)" 
+            "From the biggest/slowest/highest performance to smallest/fastest/lowest performance"
         ),
     )
     parser.add_argument(

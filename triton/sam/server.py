@@ -24,17 +24,47 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger("SAM logger")
 
 device = torch.device('cuda' if torch.cuda.is_available() else 'cpu')
-sam_checkpoint = os.path.join("checkpoints", "sam_vit_h_4b8939.pth")
-model_type = "vit_h"
-sam = sam_model_registry[model_type](checkpoint=sam_checkpoint)
-sam.to(device=device)
-sam_masks_gen = SamAutomaticMaskGenerator(sam)
+
+sam_checkpoint_h = os.path.join("checkpoints", "sam_vit_h_4b8939.pth")
+model_type_h = "vit_h"
+sam_h = sam_model_registry[model_type_h](checkpoint=sam_checkpoint_h)
+sam_h.to(device=device)
+sam_masks_gen_h = SamAutomaticMaskGenerator(sam_h)
+
+sam_checkpoint_l = os.path.join("checkpoints", "sam_vit_l_0b3195.pth")
+model_type_l = "vit_l"
+sam_l = sam_model_registry[model_type_l](checkpoint=sam_checkpoint_l)
+sam_l.to(device=device)
+sam_masks_gen_l = SamAutomaticMaskGenerator(sam_l)
+
+sam_checkpoint_b = os.path.join("checkpoints", "sam_vit_b_01ec64.pth")
+model_type_b = "vit_b"
+sam_b = sam_model_registry[model_type_b](checkpoint=sam_checkpoint_b)
+sam_b.to(device=device)
+sam_masks_gen_b = SamAutomaticMaskGenerator(sam_b)
 
 @batch
-def infer_sam_masks(**image):
+def infer_sam_masks_h(**image):
     image = image["image"][0]
     logger.debug(f"Image data: {image.shape} ({image.size})") 
-    masks = sam_masks_gen.generate(image)
+    masks = sam_masks_gen_h.generate(image)
+    return format_outputs(masks)
+
+@batch
+def infer_sam_masks_l(**image):
+    image = image["image"][0]
+    logger.debug(f"Image data: {image.shape} ({image.size})") 
+    masks = sam_masks_gen_l.generate(image)
+    return format_outputs(masks)
+
+@batch
+def infer_sam_masks_b(**image):
+    image = image["image"][0]
+    logger.debug(f"Image data: {image.shape} ({image.size})") 
+    masks = sam_masks_gen_b.generate(image)
+    return format_outputs(masks)
+
+def format_outputs(masks):
     segmentation = []
     area = []
     for i, mask in enumerate(masks):
@@ -54,10 +84,34 @@ def infer_sam_masks(**image):
 # Connecting inference callback with Triton Inference Server
 with Triton() as triton:
     # Load model into Triton Inference Server
-    logger.debug("Loading SAM.")
+    logger.debug("Loading SAM_h.")
     triton.bind(
-        model_name="SAM",
-        infer_func=infer_sam_masks,
+        model_name="SAM_h",
+        infer_func=infer_sam_masks_h,
+        inputs=[
+            Tensor(name="image", dtype=np.uint8, shape=(-1,-1,3)),
+        ],
+        outputs=[
+            Tensor(name="segmentation", dtype=np.bool_, shape=(-1,-1,-1)),
+            Tensor(name="area", dtype=np.intc, shape=(-1,)),
+        ],
+        config=ModelConfig(max_batch_size=1)
+    )
+    triton.bind(
+        model_name="SAM_l",
+        infer_func=infer_sam_masks_l,
+        inputs=[
+            Tensor(name="image", dtype=np.uint8, shape=(-1,-1,3)),
+        ],
+        outputs=[
+            Tensor(name="segmentation", dtype=np.bool_, shape=(-1,-1,-1)),
+            Tensor(name="area", dtype=np.intc, shape=(-1,)),
+        ],
+        config=ModelConfig(max_batch_size=1)
+    )
+    triton.bind(
+        model_name="SAM_b",
+        infer_func=infer_sam_masks_b,
         inputs=[
             Tensor(name="image", dtype=np.uint8, shape=(-1,-1,3)),
         ],
