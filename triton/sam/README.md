@@ -21,7 +21,7 @@ wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth .
 
 ```
 
-Other model weights can also be downloaded but for this example, `vit_h` SAM is used.
+`SAM_h` or `vit_h` is used as default in the client code samples.
 
 ### Run the server
 
