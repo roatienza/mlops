@@ -6,4 +6,4 @@ PyTriton is like HuggingFace model hub except that we cna deploy models on our l
 
 ## Table of Contents
 
-1. [Segment Anything Model (SAM)]()
+1. [Segment Anything Model (SAM)](https://github.com/roatienza/mlops/tree/main/triton/sam)
