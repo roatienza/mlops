@@ -80,7 +80,7 @@ def main():
     )
     parser.add_argument(
         "--url",
-        default="http://localhost:8010",
+        default="http://localhost:8000",
         help=(
             "Url to Triton server (ex. grpc://localhost:8001)."
             "HTTP protocol with default port is used if parameter is not provided"
