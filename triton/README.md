@@ -7,3 +7,4 @@ PyTriton is like HuggingFace model hub except that we can deploy models on our l
 ## Table of Contents
 
 1. [Segment Anything Model (SAM)](https://github.com/roatienza/mlops/tree/main/triton/sam)
+2. [Open CLIP and CoCa](https://github.com/roatienza/mlops/blob/main/triton/openclip)
