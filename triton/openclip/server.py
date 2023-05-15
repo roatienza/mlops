@@ -42,10 +42,15 @@ with open(filename) as f:
     idx2label = eval(f.read())
 
 imagenet_labels = list(idx2label.values())
-#print(imagenet_labels)
-#print(len(imagenet_labels))
 text = tokenizer(imagenet_labels)
 text = text.to(device)
+
+coca_l14, _, transform = open_clip.create_model_and_transforms(
+  model_name="coca_ViT-L-14",
+  pretrained="mscoco_finetuned_laion2B-s13B-b90k"
+)
+
+coca_l14.to(device)
 
 
 @batch
@@ -62,9 +67,7 @@ def infer_openclip_b32(**image):
         text_probs = (100.0 * image_features @ text_features.T).softmax(dim=-1)
 
     index = np.argmax(text_probs.cpu().numpy())
-    print("index", index)
     label = imagenet_labels[index]
-    print("label", label)
 
     index = np.array([index]).astype(np.int32)
     index = np.expand_dims(index, axis=0)
@@ -73,6 +76,24 @@ def infer_openclip_b32(**image):
     label = np.expand_dims(label, axis=0)
 
     return { "index": index , "label": label }
+
+@batch
+def infer_coca_l14(**image):
+    image = image["image"][0]
+    image = Image.fromarray(image)
+    image = image.convert("RGB")
+    image = transform(image).unsqueeze(0)
+    image = image.to(device)
+
+    with torch.no_grad(), torch.cuda.amp.autocast():
+        generated = coca_l14.generate(image)
+
+    label = open_clip.decode(generated[0]).split("<end_of_text>")[0].replace("<start_of_text>", "")
+
+    label = np.frombuffer(label.encode('utf-32'), dtype=np.uint32)
+    label = np.expand_dims(label, axis=0)
+
+    return { "label": label }
 
 
 # Connecting inference callback with Triton Inference Server
@@ -88,6 +109,18 @@ with Triton(config=config) as triton:
         ],
         outputs=[
             Tensor(name="index", dtype=np.int32, shape=(-1,)),
+            Tensor(name="label", dtype=np.uint32, shape=(-1,)),
+        ],
+        config=ModelConfig(max_batch_size=1)
+    )
+    logger.debug("Loading Coca.")
+    triton.bind(
+        model_name="CoCa_l14",
+        infer_func=infer_coca_l14,
+        inputs=[
+            Tensor(name="image", dtype=np.uint8, shape=(-1,-1,3)),
+        ],
+        outputs=[
             Tensor(name="label", dtype=np.uint32, shape=(-1,)),
         ],
         config=ModelConfig(max_batch_size=1)
