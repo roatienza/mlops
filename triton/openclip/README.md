@@ -1,33 +1,35 @@
-# Segment Anything Model (SAM)
+# Open CLIP and CoCa
 
-[SAM](https://github.com/facebookresearch/segment-anything) is a versatile foundation model for vision. Using prompts such as points, bounding boxes, masks and/or texts, SAM generates masks which can be useful for downstream tasks. 
+OpenAI's [CLIP](https://github.com/OpenAI/CLIP) is useful for zero-shot image classification and image to text generation but not free. In  this example, ML Foundation's [OpenClip](https://github.com/mlfoundations/open_clip/blob/main/src/open_clip/model.py) is used. OpenCLIP has a performance that is comparable to CLIP.
+
+This example also shows how to serve [CoCa](https://arxiv.org/ba/2205.01917).
 
 ### Install
 
-Before using the pytriton for SAM, install SAM and download its model weights.
+Install `open_clip` and its dependencies:
 
 ```
-pip install git+https://github.com/facebookresearch/segment-anything.git
-pip install opencv-python pycocotools matplotlib onnxruntime onnx
+pip install open_clip_torch --upgrade
+pip install torch --upgrade
+pip install torchvision --upgrade
 ```
 
 ```
-cd triton/sam
-mkdir checkpoints
-cd checkpoints 
-wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth .
-wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth .
-wget https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth .
-
+cd triton/openclip
 ```
 
-`SAM_h` or `vit_h` is used as default in the client code samples.
+In this example, Open CLIP that is trained on LAION 2B using ViT-B-32 is used.
 
 ### Run the server
 
 ```
-cd ..
 python server.py
+```
+
+The default http, grpc and metrics ports can be changed by modifying:
+
+```
+config = TritonConfig(http_port=8000, grpc_port=8001, metrics_port=8002)
 ```
 
 ### Run the client
@@ -38,6 +40,18 @@ Open a new terminal, then run:
 python client.py
 ```
 
-### Client Notebook
+The result:
 
-The client is also available as a [Jupyter Notebook](https://github.com/roatienza/mlops/blob/main/triton/sam/client.ipynb). Be sure to modify the `url` to point to your server ip. 
+```
+2023-05-15 13:32:09,751 - INFO - OpenClip & CoCa: Running inference requests
+index [284] (1,)
+Siamese cat, Siamese
+2023-05-15 13:32:09,888 - INFO - OpenClip & CoCa: Running inference requests
+an orange and white cat with a red collar .
+```
+
+The default http port can be changed through the url option:
+
+```
+--url http://localhost:8000
+```
