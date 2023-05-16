@@ -17,6 +17,7 @@ import os
 import logging
 import open_clip
 import urllib
+import pathlib
 from PIL import Image
 from pytriton.decorators import batch
 from pytriton.model_config import ModelConfig, Tensor
@@ -97,7 +98,8 @@ def infer_coca_l14(**image):
 
 
 # Connecting inference callback with Triton Inference Server
-config = TritonConfig(http_port=8000, grpc_port=8001, metrics_port=8002)
+model_repo = pathlib.Path("/data/triton/models")
+config = TritonConfig(http_port=8010, grpc_port=8011, metrics_port=8012, model_repository=model_repo)
 with Triton(config=config) as triton:
     # Load model into Triton Inference Server
     logger.debug("Loading OpenClip.")

@@ -1,5 +1,5 @@
 '''
-PyTriton SAM server
+PyTriton server
 
 Usage:
     python3 server.py
@@ -14,14 +14,18 @@ Author:
 import torch
 import numpy as np
 import os
+import pathlib
 import logging
 import open_clip
 import urllib
 from PIL import Image
 from pytriton.decorators import batch
 from pytriton.model_config import ModelConfig, Tensor
-from pytriton.triton import Triton
+from pytriton.triton import Triton, TritonConfig
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
+from ultralytics import YOLO
+
+
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s: %(message)s")
 logger = logging.getLogger("PyTriton")
@@ -70,6 +74,9 @@ coca_l14, _, transform = open_clip.create_model_and_transforms(
 )
 
 coca_l14.to(device)
+
+checkpoint = os.path.join("yolo/checkpoints", "yolov8x.pt")
+yolov8x = YOLO(checkpoint)
 
 @batch
 def infer_sam_masks_h(**image):
@@ -150,8 +157,36 @@ def infer_coca_l14(**image):
 
     return { "label": label }
 
+@batch
+def infer_yolov8x(**image):
+    image = image["image"][0]
+    result = yolov8x(image)[0]
+    bboxes = []
+    probs = []
+    names = ""
+    for data in result.boxes.data:
+        data = data.detach().cpu().numpy()
+        idx = int(data[5])
+        prob = data[4]
+        bbox = data[:4]
+        name = result.names[idx]
+        bboxes.append(bbox)
+        probs.append(prob)
+        names += name + "|" 
+
+    bboxes = np.array(bboxes, dtype=np.float32)
+    probs = np.array(probs, dtype=np.float32)
+    bboxes = np.expand_dims(bboxes, axis=0)
+    probs = np.expand_dims(probs, axis=0)
+
+    names = np.frombuffer(names.encode('utf-32'), dtype=np.uint32)
+    names = np.expand_dims(names, axis=0)
+
+    return { "bboxes": bboxes, "probs": probs, "names" : names }
+
 
 # Connecting inference callback with Triton Inference Server
+config = TritonConfig(log_file=pathlib.Path("/tmp/triton.log"), log_verbose=3, )
 with Triton() as triton:
     # Load model into Triton Inference Server
     logger.debug("Loading SAM_h.")
@@ -213,6 +248,20 @@ with Triton() as triton:
         ],
         outputs=[
             Tensor(name="label", dtype=np.uint32, shape=(-1,)),
+        ],
+        config=ModelConfig(max_batch_size=1)
+    )
+    logger.debug("Loading Yolov8x.")
+    triton.bind(
+        model_name="Yolov8x",
+        infer_func=infer_yolov8x,
+        inputs=[
+            Tensor(name="image", dtype=np.uint8, shape=(-1,-1,3)),
+        ],
+        outputs=[
+            Tensor(name="bboxes", dtype=np.float32, shape=(-1,4)),
+            Tensor(name="probs", dtype=np.float32, shape=(-1,1)),
+            Tensor(name="names", dtype=np.uint32, shape=(-1,-1)),
         ],
         config=ModelConfig(max_batch_size=1)
     )
