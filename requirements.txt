@@ -9,3 +9,4 @@ onnxruntime
 onnx
 open_clip_torch
 transformers
+ultralytics
