@@ -17,7 +17,7 @@ import os
 import logging
 from pytriton.decorators import batch
 from pytriton.model_config import ModelConfig, Tensor
-from pytriton.triton import Triton
+from pytriton.triton import Triton, TritonConfig
 from segment_anything import sam_model_registry, SamAutomaticMaskGenerator, SamPredictor
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(name)s: %(message)s")
@@ -65,24 +65,38 @@ def infer_sam_masks_b(**image):
     return format_outputs(masks)
 
 def format_outputs(masks):
-    segmentation = []
-    area = []
+    outputs = {}
+    outputs["segmentation"] = []
+    outputs["area"] = []
+    outputs["bbox"] = []
+    outputs["predicted_iou"] = []
+    outputs["stability_score"] = []
     for i, mask in enumerate(masks):
         for k,v in mask.items():
-            if k == "segmentation":
-                segmentation.append(v)
-            elif k == "area":
-                area.append(v)
+            if k in outputs:
+                outputs[k].append(v)
 
-    segmentation = np.array(segmentation).astype(np.bool_)
+    segmentation = np.array(outputs["segmentation"]).astype(np.bool_)
     segmentation = np.expand_dims(segmentation, axis=0)
-    area = np.array(area).astype(np.intc)
+
+    bbox = np.array(outputs["bbox"]).astype(np.intc)
+    bbox = np.expand_dims(bbox, axis=0)
+    
+    predicted_iou = np.array(outputs["predicted_iou"]).astype(np.float32)
+    predicted_iou = np.expand_dims(predicted_iou, axis=0)
+
+    stability_score = np.array(outputs["stability_score"]).astype(np.float32)
+    stability_score = np.expand_dims(stability_score, axis=0)
+
+    area = np.array(outputs["area"]).astype(np.intc)
     area = np.expand_dims(area, axis=0)
-    return { "segmentation" : segmentation, "area" : area }
+    
+    return { "segmentation" : segmentation, "area" : area, "bbox" : bbox, "predicted_iou" : predicted_iou, "stability_score" : stability_score  }
 
 
 # Connecting inference callback with Triton Inference Server
-with Triton() as triton:
+config = TritonConfig(http_port=8010, grpc_port=8011, metrics_port=8012,)
+with Triton(config=config) as triton:
     # Load model into Triton Inference Server
     logger.debug("Loading SAM_h.")
     triton.bind(
@@ -94,6 +108,9 @@ with Triton() as triton:
         outputs=[
             Tensor(name="segmentation", dtype=np.bool_, shape=(-1,-1,-1)),
             Tensor(name="area", dtype=np.intc, shape=(-1,)),
+            Tensor(name="bbox", dtype=np.intc, shape=(-1,4)),
+            Tensor(name="predicted_iou", dtype=np.float32, shape=(-1,)),
+            Tensor(name="stability_score", dtype=np.float32, shape=(-1,)),
         ],
         config=ModelConfig(max_batch_size=1)
     )
@@ -106,6 +123,9 @@ with Triton() as triton:
         outputs=[
             Tensor(name="segmentation", dtype=np.bool_, shape=(-1,-1,-1)),
             Tensor(name="area", dtype=np.intc, shape=(-1,)),
+            Tensor(name="bbox", dtype=np.intc, shape=(-1,4)),
+            Tensor(name="predicted_iou", dtype=np.float32, shape=(-1,)),
+            Tensor(name="stability_score", dtype=np.float32, shape=(-1,)), 
         ],
         config=ModelConfig(max_batch_size=1)
     )
@@ -118,6 +138,9 @@ with Triton() as triton:
         outputs=[
             Tensor(name="segmentation", dtype=np.bool_, shape=(-1,-1,-1)),
             Tensor(name="area", dtype=np.intc, shape=(-1,)),
+            Tensor(name="bbox", dtype=np.intc, shape=(-1,4)),
+            Tensor(name="predicted_iou", dtype=np.float32, shape=(-1,)),
+            Tensor(name="stability_score", dtype=np.float32, shape=(-1,)),
         ],
         config=ModelConfig(max_batch_size=1)
     )
